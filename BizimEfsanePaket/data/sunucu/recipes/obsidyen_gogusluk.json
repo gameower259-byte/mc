@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "O O",
+    "OOO",
+    "OOO"
+  ],
+  "key": {
+    "O": {
+      "item": "minecraft:black_terracotta"
+    }
+  },
+  "result": {
+    "item": "minecraft:leather_chestplate",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Obsidyen Göğüslük\",\"color\":\"dark_purple\",\"italic\":false}",
+      "minecraft:dyed_color": 1908001,
+      "minecraft:attribute_modifiers": [
+        {
+          "type": "minecraft:generic.armor",
+          "amount": 4,
+          "operation": "add_value",
+          "slot": "chest",
+          "id": "obsidyen_armor"
+        }
+      ]
+    }
+  }
+}

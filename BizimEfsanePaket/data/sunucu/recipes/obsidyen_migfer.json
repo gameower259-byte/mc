@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "OOO",
+    "O O",
+    "   "
+  ],
+  "key": {
+    "O": {
+      "item": "minecraft:black_terracotta"
+    }
+  },
+  "result": {
+    "item": "minecraft:leather_helmet",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Obsidyen Miğfer\",\"color\":\"dark_purple\",\"italic\":false}",
+      "minecraft:dyed_color": 1908001,
+      "minecraft:attribute_modifiers": [
+        {
+          "type": "minecraft:generic.max_health",
+          "amount": 4,
+          "operation": "add_value",
+          "slot": "head",
+          "id": "obsidyen_hp"
+        }
+      ]
+    }
+  }
+}

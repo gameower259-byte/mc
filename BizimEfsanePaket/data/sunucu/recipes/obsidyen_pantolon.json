@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "OOO",
+    "O O",
+    "O O"
+  ],
+  "key": {
+    "O": {
+      "item": "minecraft:black_terracotta"
+    }
+  },
+  "result": {
+    "item": "minecraft:leather_leggings",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Obsidyen Pantolon\",\"color\":\"dark_purple\",\"italic\":false}",
+      "minecraft:dyed_color": 1908001,
+      "minecraft:attribute_modifiers": [
+        {
+          "type": "minecraft:generic.armor_toughness",
+          "amount": 2,
+          "operation": "add_value",
+          "slot": "legs",
+          "id": "obsidyen_toughness"
+        }
+      ]
+    }
+  }
+}

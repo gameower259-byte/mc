@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "   ",
+    "O O",
+    "O O"
+  ],
+  "key": {
+    "O": {
+      "item": "minecraft:black_terracotta"
+    }
+  },
+  "result": {
+    "item": "minecraft:leather_boots",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Obsidyen Çizme\",\"color\":\"dark_purple\",\"italic\":false}",
+      "minecraft:dyed_color": 1908001,
+      "minecraft:attribute_modifiers": [
+        {
+          "type": "minecraft:generic.movement_speed",
+          "amount": 0.03,
+          "operation": "add_value",
+          "slot": "feet",
+          "id": "obsidyen_speed"
+        }
+      ]
+    }
+  }
+}
