@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "minecraft:rotten_flesh"},
+    {"item": "minecraft:amethyst_shard"}
+  ],
+  "result": {
+    "item": "minecraft:rabbit_foot",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Vampir Dişi\",\"color\":\"dark_red\",\"italic\":false}",
+      "minecraft:lore": ["{\"text\":\"Gece güç kazandırır\",\"color\":\"gray\"}"]
+    }
+  }
+}

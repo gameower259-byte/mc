@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "W W",
+    "W W"
+  ],
+  "key": {
+    "W": {"item": "minecraft:white_wool"}
+  },
+  "result": {
+    "item": "minecraft:leather_boots",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Hafif Ayakkabılar\",\"color\":\"white\",\"italic\":false}",
+      "minecraft:dyed_color": 16777215
+    }
+  }
+}

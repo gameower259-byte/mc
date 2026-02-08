@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "E E",
+    "EEE",
+    "EEE"
+  ],
+  "key": {
+    "E": {"item": "minecraft:dragon_breath"}
+  },
+  "result": {
+    "item": "minecraft:elytra",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Ejderha Zırhı\",\"color\":\"dark_purple\",\"italic\":false}",
+      "minecraft:lore": ["{\"text\":\"Hafif süzülme sağlar\",\"color\":\"gray\"}"]
+    }
+  }
+}

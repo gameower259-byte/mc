@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "minecraft:goat_horn"},
+    {"item": "minecraft:gold_ingot"}
+  ],
+  "result": {
+    "item": "minecraft:goat_horn",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Savaş Narası\",\"color\":\"gold\",\"italic\":false}",
+      "minecraft:lore": ["{\"text\":\"Kral gücü yayar\",\"color\":\"gray\"}"]
+    }
+  }
+}

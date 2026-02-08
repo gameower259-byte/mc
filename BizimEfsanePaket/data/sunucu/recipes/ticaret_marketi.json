@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "EEE",
+    "EBE",
+    "EEE"
+  ],
+  "key": {
+    "E": {"item": "minecraft:emerald"},
+    "B": {"item": "minecraft:barrel"}
+  },
+  "result": {
+    "item": "minecraft:barrel",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Ticaret Marketi\",\"color\":\"green\",\"italic\":false}",
+      "minecraft:lore": ["{\"text\":\"Takım takası için kullan\",\"color\":\"gray\"}"]
+    }
+  }
+}

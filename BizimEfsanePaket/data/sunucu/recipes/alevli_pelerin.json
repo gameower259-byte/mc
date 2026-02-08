@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "F F",
+    "FFF",
+    "FFF"
+  ],
+  "key": {
+    "F": {"item": "minecraft:orange_terracotta"}
+  },
+  "result": {
+    "item": "minecraft:leather_chestplate",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Alevli Pelerin\",\"color\":\"gold\",\"italic\":false}",
+      "minecraft:dyed_color": 15435844
+    }
+  }
+}

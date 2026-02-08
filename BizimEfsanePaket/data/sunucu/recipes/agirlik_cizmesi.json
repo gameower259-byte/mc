@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "P P",
+    "P P"
+  ],
+  "key": {
+    "P": {"item": "minecraft:purple_terracotta"}
+  },
+  "result": {
+    "item": "minecraft:leather_boots",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Ağırlık Çizmesi\",\"color\":\"dark_purple\",\"italic\":false}",
+      "minecraft:dyed_color": 10494192,
+      "minecraft:attribute_modifiers": [
+        {
+          "type": "minecraft:generic.knockback_resistance",
+          "amount": 0.2,
+          "operation": "add_value",
+          "slot": "feet",
+          "id": "agirlik_kb"
+        }
+      ]
+    }
+  }
+}

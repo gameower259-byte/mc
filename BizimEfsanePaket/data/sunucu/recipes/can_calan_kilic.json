@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " R ",
+    " R ",
+    " S "
+  ],
+  "key": {
+    "R": {"item": "minecraft:redstone"},
+    "S": {"item": "minecraft:stick"}
+  },
+  "result": {
+    "item": "minecraft:iron_sword",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Can Çalan Kılıç\",\"color\":\"dark_red\",\"italic\":false}",
+      "minecraft:lore": ["{\"text\":\"Vuruşta yaşam çalar\",\"color\":\"gray\"}"]
+    }
+  }
+}

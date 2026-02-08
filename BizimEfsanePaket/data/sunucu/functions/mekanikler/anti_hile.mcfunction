@@ -1,0 +1,10 @@
+function sunucu:mekanikler/hiz_kontrol
+function sunucu:mekanikler/envanter_taramasi
+function sunucu:mekanikler/reach_kontrol
+function sunucu:mekanikler/maden_kontrol
+function sunucu:mekanikler/ucus_kontrol
+function sunucu:mekanikler/killaura_kontrol
+function sunucu:mekanikler/ping_kontrol
+function sunucu:mekanikler/xray_koruma
+function sunucu:mekanikler/giris_dogrulama
+function sunucu:mekanikler/komut_kilidi
