@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "YYY",
+    "Y Y"
+  ],
+  "key": {
+    "Y": {"item": "minecraft:yellow_terracotta"}
+  },
+  "result": {
+    "item": "minecraft:leather_helmet",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Madenci Kaskı\",\"color\":\"yellow\",\"italic\":false}",
+      "minecraft:dyed_color": 16776960
+    }
+  }
+}

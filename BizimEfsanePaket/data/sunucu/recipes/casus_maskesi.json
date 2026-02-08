@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "S S",
+    " S "
+  ],
+  "key": {
+    "S": {"item": "minecraft:black_terracotta"}
+  },
+  "result": {
+    "item": "minecraft:leather_helmet",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Casus Maskesi\",\"color\":\"gray\",\"italic\":false}",
+      "minecraft:dyed_color": 2236962
+    }
+  }
+}

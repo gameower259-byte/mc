@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RRR",
+    " S ",
+    " S "
+  ],
+  "key": {
+    "R": {"item": "minecraft:red_terracotta"},
+    "S": {"item": "minecraft:stick"}
+  },
+  "result": {
+    "item": "minecraft:iron_pickaxe",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Yakut Kazma\",\"color\":\"red\",\"italic\":false}",
+      "minecraft:lore": ["{\"text\":\"Hızlı kazı bonusu\",\"color\":\"gray\"}"]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "minecraft:arrow"},
+    {"item": "minecraft:green_terracotta"}
+  ],
+  "result": {
+    "item": "minecraft:tipped_arrow",
+    "count": 4,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Zehirli Ok\",\"color\":\"dark_green\",\"italic\":false}",
+      "minecraft:potion_contents": {"potion": "minecraft:poison"}
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "minecraft:stone"},
+    {"item": "minecraft:emerald"}
+  ],
+  "result": {
+    "item": "minecraft:stone",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Şanslı Maden\",\"color\":\"green\",\"italic\":false}",
+      "minecraft:lore": ["{\"text\":\"Kazıda ekstra ödül şansı\",\"color\":\"gray\"}"]
+    }
+  }
+}

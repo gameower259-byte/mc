@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item": "minecraft:carrot_on_a_stick"},
+    {"item": "minecraft:stone"}
+  ],
+  "result": {
+    "item": "minecraft:carrot_on_a_stick",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Tünel Anahtarı\",\"color\":\"dark_gray\",\"italic\":false}",
+      "minecraft:lore": ["{\"text\":\"Sağ tık: gizli tünel\",\"color\":\"gray\"}"]
+    }
+  }
+}

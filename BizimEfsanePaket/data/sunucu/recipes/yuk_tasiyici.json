@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IRI",
+    "IBI",
+    "IRI"
+  ],
+  "key": {
+    "I": {"item": "minecraft:iron_ingot"},
+    "R": {"item": "minecraft:redstone"},
+    "B": {"item": "minecraft:shulker_box"}
+  },
+  "result": {
+    "item": "minecraft:shulker_box",
+    "count": 1,
+    "components": {
+      "minecraft:display_name": "{\"text\":\"Yük Taşıyıcı\",\"color\":\"gold\",\"italic\":false}",
+      "minecraft:lore": ["{\"text\":\"Envanter taşımayı kolaylaştırır\",\"color\":\"gray\"}"]
+    }
+  }
+}
