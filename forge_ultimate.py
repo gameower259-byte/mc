@@ -14,7 +14,7 @@ import subprocess
 import sys
 import threading
 import time
-from collections import Counter
+from collections import Counter, deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -549,6 +549,9 @@ class TeknofestAssistantApp(ctk.CTk):
         self.snapshot: ProjectSnapshot | None = None
         self.pending_install: set[str] = set()
         self.command_history: list[str] = []
+        self.pending_commands: deque[str] = deque()
+        self.is_processing: bool = False
+        self.last_assistant_response: str = ""
 
         # setup ui
         self._setup_main_window()
@@ -574,6 +577,8 @@ class TeknofestAssistantApp(ctk.CTk):
         self.grid_columnconfigure(1, weight=3)
         self.grid_columnconfigure(2, weight=1)
         self.grid_rowconfigure(0, weight=1)
+        self.bind("<Control-l>", lambda _e: self._clear_chat())
+        self.bind("<Control-s>", lambda _e: self.save_memory(silent=False))
 
     def _build_layout_frames(self) -> None:
         self.left = ctk.CTkFrame(self, fg_color="#14161a", corner_radius=0)
@@ -758,6 +763,28 @@ class TeknofestAssistantApp(ctk.CTk):
         self.history_list = ctk.CTkTextbox(self.right, height=120, font=("Consolas", 10), fg_color="#08090b")
         self.history_list.pack(fill="x", padx=12, pady=(4, 8))
 
+        ctk.CTkLabel(self.right, text="Komut Kuyruğu", font=("Consolas", 12, "bold")).pack(anchor="w", padx=12)
+        self.queue_list = ctk.CTkTextbox(self.right, height=90, font=("Consolas", 10), fg_color="#08090b")
+        self.queue_list.pack(fill="x", padx=12, pady=(4, 8))
+
+        self.btn_export_chat = ctk.CTkButton(
+            self.right,
+            text="💾 Sohbeti Dışa Aktar",
+            command=self._export_chat_log,
+            fg_color="#2f4f7f",
+            hover_color="#274166",
+        )
+        self.btn_export_chat.pack(fill="x", padx=12, pady=(0, 6))
+
+        self.btn_clear_chat = ctk.CTkButton(
+            self.right,
+            text="🧹 Sohbeti Temizle",
+            command=self._clear_chat,
+            fg_color="#6b3d2e",
+            hover_color="#5a3427",
+        )
+        self.btn_clear_chat.pack(fill="x", padx=12, pady=(0, 8))
+
         ctk.CTkLabel(self.right, text="Bulunan Modüller", font=("Consolas", 12, "bold")).pack(anchor="w", padx=12)
         self.module_list = ctk.CTkTextbox(self.right, height=150, font=("Consolas", 10), fg_color="#08090b")
         self.module_list.pack(fill="x", padx=12, pady=(4, 8))
@@ -831,6 +858,63 @@ class TeknofestAssistantApp(ctk.CTk):
         self.command_entry.delete(0, "end")
         self.command_entry.insert(0, content)
 
+    def _export_chat_log(self) -> None:
+        target = filedialog.asksaveasfilename(
+            title="Sohbet Kaydet",
+            defaultextension=".md",
+            filetypes=[("Markdown", "*.md"), ("Text", "*.txt")],
+        )
+        if not target:
+            return
+        try:
+            content = self.chat_box.get("1.0", "end").strip()
+            Path(target).write_text(content + "\n", encoding="utf-8")
+            self.logger.log(f"Sohbet dışa aktarıldı: {target}")
+        except Exception as exc:
+            self.logger.log(f"Sohbet dışa aktarma hatası: {exc}")
+
+    def _clear_chat(self) -> None:
+        self.chat_box.configure(state="normal")
+        self.chat_box.delete("1.0", "end")
+        self.chat_box.configure(state="disabled")
+        self.logger.log("Sohbet ekranı temizlendi.")
+
+    def _queue_command(self, command: str) -> None:
+        self.pending_commands.append(command)
+        self.queue_list.delete("1.0", "end")
+        if self.pending_commands:
+            self.queue_list.insert("end", "\n".join(list(self.pending_commands)[:20]))
+        else:
+            self.queue_list.insert("end", "Kuyruk boş")
+        self._run_next_command()
+
+    def _run_next_command(self) -> None:
+        if self.is_processing or not self.pending_commands:
+            return
+        next_command = self.pending_commands.popleft()
+        self.is_processing = True
+        self.queue_list.delete("1.0", "end")
+        if self.pending_commands:
+            self.queue_list.insert("end", "\n".join(list(self.pending_commands)[:20]))
+        else:
+            self.queue_list.insert("end", "Kuyruk boş")
+
+        interpretation = self.router.interpret(next_command)
+        threading.Thread(target=self._process_command, args=(interpretation,), daemon=True).start()
+
+    def _execute_special_command(self, raw: str) -> bool:
+        normalized = raw.strip().lower()
+        if normalized == "/clear":
+            self._clear_chat()
+            return True
+        if normalized == "/analyze":
+            self.refresh_project_analysis()
+            return True
+        if normalized == "/save":
+            self.save_memory(silent=False)
+            return True
+        return False
+
     def select_workspace(self) -> None:
         selected = filedialog.askdirectory()
         if not selected:
@@ -890,90 +974,95 @@ class TeknofestAssistantApp(ctk.CTk):
         self.command_history = self.command_history[-40:]
         self.history_list.delete("1.0", "end")
         self.history_list.insert("end", "\n".join(self.command_history[-12:]))
-
-        interpretation = self.router.interpret(raw)
-        threading.Thread(target=self._process_command, args=(interpretation,), daemon=True).start()
+        if self._execute_special_command(raw):
+            return
+        self._queue_command(raw)
 
     def _process_command(self, interpretation: CommandInterpretation) -> None:
-        normalized = interpretation.normalized
+        try:
+            normalized = interpretation.normalized
 
-        if normalized in INSTANT_COMMANDS:
-            self.bus.emit("chat", "ASİSTAN", INSTANT_COMMANDS[normalized])
-            return
-
-        # hızlı yanıt
-        if normalized in FAST_RESPONSES:
-            resp = FAST_RESPONSES[normalized]
-            self.memory.cache_set(normalized, resp)
-            self.bus.emit("chat", "ASİSTAN", resp)
-            self.logger.log("Hızlı yanıt döndürüldü.")
-            return
-
-        cached = self.memory.cache_get(normalized)
-        if cached:
-            self.bus.emit("chat", "ASİSTAN", f"(Önbellekten)\n{cached}")
-            self.logger.log("Yanıt önbellekten döndürüldü.")
-            return
-
-        # install intent
-        if interpretation.should_install_module:
-            if not self.openclaw.use_installer:
-                self.bus.emit("chat", "ASİSTAN", "OpenClaw profilinde paket kurulum devre dışı.")
+            if normalized in INSTANT_COMMANDS:
+                self.bus.emit("chat", "ASİSTAN", INSTANT_COMMANDS[normalized])
                 return
-            package = self._extract_install_target(interpretation.raw)
-            if package:
-                ok, info = self.installer.install_package(package)
-                icon = "✅" if ok else "❌"
-                self.bus.emit("chat", "ASİSTAN", f"{icon} {info}")
-                self.logger.log(info)
-                self.refresh_project_analysis()
+
+            # hızlı yanıt
+            if normalized in FAST_RESPONSES:
+                resp = FAST_RESPONSES[normalized]
+                self.memory.cache_set(normalized, resp)
+                self.bus.emit("chat", "ASİSTAN", resp)
+                self.logger.log("Hızlı yanıt döndürüldü.")
                 return
-            self.bus.emit("chat", "ASİSTAN", "Kurulacak paket adı anlaşılamadı.")
 
-        # context üret
-        web_context = self.search.query(interpretation.raw) if self.openclaw.use_web else "Web arama profilde kapalı."
-        project_context = self._build_project_context()
-        language_hint = self.router.detect_language_name(interpretation.raw)
-        ai_response = self.ai.ask(
-            interpretation.raw,
-            web_context,
-            project_context,
-            language_hint,
-            self.openclaw.mode,
-            self.openclaw.model,
-            self.openclaw.temperature,
-        )
-
-        # dosya üretimi
-        created_path: Path | None = None
-        if interpretation.should_generate_file:
-            if not self.openclaw.use_file_ops:
-                self.bus.emit("chat", "ASİSTAN", "OpenClaw profilinde dosya üretimi devre dışı.")
+            cached = self.memory.cache_get(normalized)
+            if cached:
+                self.bus.emit("chat", "ASİSTAN", f"(Önbellekten)\n{cached}")
+                self.logger.log("Yanıt önbellekten döndürüldü.")
                 return
-            if not self.workspace:
-                self.bus.emit("chat", "ASİSTAN", "Dosya oluşturmak için önce çalışma alanı seçin.")
-            else:
-                try:
-                    created_path = self.architect.save_generated_content(self.workspace, interpretation.raw, ai_response)
-                    self.memory.add_created_file(str(created_path))
-                    self.bus.emit("chat", "SİSTEM", f"✅ Dosya oluşturuldu: {created_path.name}")
-                    self.bus.emit("refresh_file_tree")
-                except Exception as exc:
-                    self.bus.emit("chat", "SİSTEM", f"❌ Dosya oluşturma hatası: {exc}")
 
-        # yanıt ve bellek
-        self.bus.emit("chat", "ASİSTAN", ai_response)
-        self.memory.cache_set(normalized, ai_response)
-        self.memory.add_history(
-            {
-                "time": int(time.time()),
-                "command": interpretation.raw,
-                "intent": interpretation.intent,
-                "created_file": str(created_path) if created_path else None,
-            },
-            max_size=self.engine_cfg.max_history_size,
-        )
-        self.save_memory(silent=True)
+            # install intent
+            if interpretation.should_install_module:
+                if not self.openclaw.use_installer:
+                    self.bus.emit("chat", "ASİSTAN", "OpenClaw profilinde paket kurulum devre dışı.")
+                    return
+                package = self._extract_install_target(interpretation.raw)
+                if package:
+                    ok, info = self.installer.install_package(package)
+                    icon = "✅" if ok else "❌"
+                    self.bus.emit("chat", "ASİSTAN", f"{icon} {info}")
+                    self.logger.log(info)
+                    self.refresh_project_analysis()
+                    return
+                self.bus.emit("chat", "ASİSTAN", "Kurulacak paket adı anlaşılamadı.")
+
+            # context üret
+            web_context = self.search.query(interpretation.raw) if self.openclaw.use_web else "Web arama profilde kapalı."
+            project_context = self._build_project_context()
+            language_hint = self.router.detect_language_name(interpretation.raw)
+            ai_response = self.ai.ask(
+                interpretation.raw,
+                web_context,
+                project_context,
+                language_hint,
+                self.openclaw.mode,
+                self.openclaw.model,
+                self.openclaw.temperature,
+            )
+
+            # dosya üretimi
+            created_path: Path | None = None
+            if interpretation.should_generate_file:
+                if not self.openclaw.use_file_ops:
+                    self.bus.emit("chat", "ASİSTAN", "OpenClaw profilinde dosya üretimi devre dışı.")
+                    return
+                if not self.workspace:
+                    self.bus.emit("chat", "ASİSTAN", "Dosya oluşturmak için önce çalışma alanı seçin.")
+                else:
+                    try:
+                        created_path = self.architect.save_generated_content(self.workspace, interpretation.raw, ai_response)
+                        self.memory.add_created_file(str(created_path))
+                        self.bus.emit("chat", "SİSTEM", f"✅ Dosya oluşturuldu: {created_path.name}")
+                        self.bus.emit("refresh_file_tree")
+                    except Exception as exc:
+                        self.bus.emit("chat", "SİSTEM", f"❌ Dosya oluşturma hatası: {exc}")
+
+            # yanıt ve bellek
+            self.last_assistant_response = ai_response
+            self.bus.emit("chat", "ASİSTAN", ai_response)
+            self.memory.cache_set(normalized, ai_response)
+            self.memory.add_history(
+                {
+                    "time": int(time.time()),
+                    "command": interpretation.raw,
+                    "intent": interpretation.intent,
+                    "created_file": str(created_path) if created_path else None,
+                },
+                max_size=self.engine_cfg.max_history_size,
+            )
+            self.save_memory(silent=True)
+        finally:
+            self.is_processing = False
+            self.after(10, self._run_next_command)
 
     def _build_project_context(self) -> str:
         if not self.snapshot:
