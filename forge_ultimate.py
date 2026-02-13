@@ -50,6 +50,17 @@ class EngineConfig:
 
 
 @dataclass
+class OpenClawProfile:
+    enabled: bool = True
+    mode: str = "Agent"
+    model: str = "auto"
+    use_web: bool = True
+    use_file_ops: bool = True
+    use_installer: bool = False
+    temperature: float = 0.2
+
+
+@dataclass
 class LanguageRule:
     extension: str
     aliases: tuple[str, ...]
@@ -332,11 +343,23 @@ class AIEngine:
         self.logger = logger
         self.timeout = timeout
 
-    def ask(self, user_command: str, web_context: str, project_context: str, language_hint: str) -> str:
+    def ask(
+        self,
+        user_command: str,
+        web_context: str,
+        project_context: str,
+        language_hint: str,
+        mode: str,
+        selected_model: str,
+        temperature: float,
+    ) -> str:
         self.logger.log("LLM yanıtı hazırlanıyor.")
         try:
             msg = (
                 f"Detected language: {language_hint}\n\n"
+                f"Execution mode: {mode}\n"
+                f"Selected profile model: {selected_model}\n"
+                f"Temperature target: {temperature:.2f}\n\n"
                 f"Proje bağlamı:\n{project_context}\n\n"
                 f"Web bağlamı:\n{web_context}\n\n"
                 f"Kullanıcı komutu:\n{user_command}"
@@ -506,6 +529,7 @@ class TeknofestAssistantApp(ctk.CTk):
         # config
         self.ui_cfg = UIConfig()
         self.engine_cfg = EngineConfig()
+        self.openclaw = OpenClawProfile()
 
         # services
         self.bus = EventBus()
@@ -524,6 +548,7 @@ class TeknofestAssistantApp(ctk.CTk):
         self.workspace: Path | None = None
         self.snapshot: ProjectSnapshot | None = None
         self.pending_install: set[str] = set()
+        self.command_history: list[str] = []
 
         # setup ui
         self._setup_main_window()
@@ -601,6 +626,53 @@ class TeknofestAssistantApp(ctk.CTk):
         )
         self.btn_install.pack(fill="x", padx=14, pady=(0, 10))
 
+        ctk.CTkLabel(self.left, text="OpenClaw Uyum Modu", font=("Consolas", 12, "bold")).pack(anchor="w", padx=14)
+        self.openclaw_enabled = ctk.BooleanVar(value=self.openclaw.enabled)
+        self.openclaw_toggle = ctk.CTkSwitch(
+            self.left,
+            text="OpenClaw benzeri akış aktif",
+            variable=self.openclaw_enabled,
+            command=self._apply_openclaw_settings,
+        )
+        self.openclaw_toggle.pack(fill="x", padx=14, pady=(2, 6))
+
+        self.mode_selector = ctk.CTkSegmentedButton(
+            self.left,
+            values=["Agent", "Chat"],
+            command=lambda v: self._set_mode(v),
+        )
+        self.mode_selector.set(self.openclaw.mode)
+        self.mode_selector.pack(fill="x", padx=14, pady=(0, 6))
+
+        self.model_selector = ctk.CTkOptionMenu(
+            self.left,
+            values=["auto", "coder", "reasoner", "fast"],
+            command=self._set_model,
+        )
+        self.model_selector.set(self.openclaw.model)
+        self.model_selector.pack(fill="x", padx=14, pady=(0, 6))
+
+        self.temperature_slider = ctk.CTkSlider(self.left, from_=0.0, to=1.0, command=self._set_temperature)
+        self.temperature_slider.set(self.openclaw.temperature)
+        self.temperature_slider.pack(fill="x", padx=14, pady=(0, 6))
+
+        self.temp_label = ctk.CTkLabel(self.left, text=f"Sıcaklık: {self.openclaw.temperature:.2f}", font=("Consolas", 10))
+        self.temp_label.pack(anchor="w", padx=14, pady=(0, 6))
+
+        self.web_enabled = ctk.BooleanVar(value=self.openclaw.use_web)
+        self.file_enabled = ctk.BooleanVar(value=self.openclaw.use_file_ops)
+        self.install_enabled = ctk.BooleanVar(value=self.openclaw.use_installer)
+
+        ctk.CTkCheckBox(self.left, text="Web arama", variable=self.web_enabled, command=self._apply_openclaw_settings).pack(
+            anchor="w", padx=14
+        )
+        ctk.CTkCheckBox(self.left, text="Dosya işlemleri", variable=self.file_enabled, command=self._apply_openclaw_settings).pack(
+            anchor="w", padx=14
+        )
+        ctk.CTkCheckBox(self.left, text="Paket kurulum", variable=self.install_enabled, command=self._apply_openclaw_settings).pack(
+            anchor="w", padx=14, pady=(0, 8)
+        )
+
         ctk.CTkLabel(self.left, text="Sistem Günlüğü", font=("Consolas", 12, "bold")).pack(anchor="w", padx=14)
         self.system_log_text = ctk.CTkTextbox(self.left, height=260, font=("Consolas", 10), fg_color="#08090b")
         self.system_log_text.pack(fill="both", expand=True, padx=14, pady=(4, 10))
@@ -612,10 +684,31 @@ class TeknofestAssistantApp(ctk.CTk):
     def _build_center_panel(self) -> None:
         ctk.CTkLabel(
             self.center,
-            text="Mühendislik Sohbet Konsolu",
+            text="OpenClaw Benzeri Mühendislik Konsolu",
             font=("Segoe UI", 18, "bold"),
             text_color="#bce8ff",
         ).pack(anchor="w", padx=16, pady=(14, 6))
+
+        self.quick_frame = ctk.CTkFrame(self.center, fg_color="transparent")
+        self.quick_frame.pack(fill="x", padx=16, pady=(0, 8))
+        ctk.CTkButton(
+            self.quick_frame,
+            text="PRD Taslağı",
+            width=120,
+            command=lambda: self._inject_template("Bir ürün gereksinim dokümanı (PRD) şablonu hazırla."),
+        ).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(
+            self.quick_frame,
+            text="API İskeleti",
+            width=120,
+            command=lambda: self._inject_template("Python FastAPI ile production API iskeleti oluştur."),
+        ).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(
+            self.quick_frame,
+            text="Test Paketi",
+            width=120,
+            command=lambda: self._inject_template("Proje için birim test paketi üret."),
+        ).pack(side="left")
 
         self.chat_box = ctk.CTkTextbox(
             self.center,
@@ -660,6 +753,10 @@ class TeknofestAssistantApp(ctk.CTk):
 
         self.file_tree = ctk.CTkTextbox(self.right, font=("Consolas", 11), fg_color="#08090b")
         self.file_tree.pack(fill="both", expand=True, padx=12, pady=(0, 8))
+
+        ctk.CTkLabel(self.right, text="Komut Geçmişi", font=("Consolas", 12, "bold")).pack(anchor="w", padx=12)
+        self.history_list = ctk.CTkTextbox(self.right, height=120, font=("Consolas", 10), fg_color="#08090b")
+        self.history_list.pack(fill="x", padx=12, pady=(4, 8))
 
         ctk.CTkLabel(self.right, text="Bulunan Modüller", font=("Consolas", 12, "bold")).pack(anchor="w", padx=12)
         self.module_list = ctk.CTkTextbox(self.right, height=150, font=("Consolas", 10), fg_color="#08090b")
@@ -707,6 +804,32 @@ class TeknofestAssistantApp(ctk.CTk):
         self.chat_box.see("end")
 
     # ----------------- Actions -----------------
+
+    def _apply_openclaw_settings(self) -> None:
+        self.openclaw.enabled = bool(self.openclaw_enabled.get())
+        self.openclaw.use_web = bool(self.web_enabled.get())
+        self.openclaw.use_file_ops = bool(self.file_enabled.get())
+        self.openclaw.use_installer = bool(self.install_enabled.get())
+        self.logger.log(
+            f"OpenClaw profil güncellendi: mode={self.openclaw.mode}, model={self.openclaw.model}, "
+            f"web={self.openclaw.use_web}, file={self.openclaw.use_file_ops}, install={self.openclaw.use_installer}"
+        )
+
+    def _set_mode(self, value: str) -> None:
+        self.openclaw.mode = value
+        self._apply_openclaw_settings()
+
+    def _set_model(self, value: str) -> None:
+        self.openclaw.model = value
+        self._apply_openclaw_settings()
+
+    def _set_temperature(self, value: float) -> None:
+        self.openclaw.temperature = float(value)
+        self.temp_label.configure(text=f"Sıcaklık: {self.openclaw.temperature:.2f}")
+
+    def _inject_template(self, content: str) -> None:
+        self.command_entry.delete(0, "end")
+        self.command_entry.insert(0, content)
 
     def select_workspace(self) -> None:
         selected = filedialog.askdirectory()
@@ -763,6 +886,10 @@ class TeknofestAssistantApp(ctk.CTk):
 
         self.command_entry.delete(0, "end")
         self.bus.emit("chat", "KULLANICI", raw)
+        self.command_history.append(raw)
+        self.command_history = self.command_history[-40:]
+        self.history_list.delete("1.0", "end")
+        self.history_list.insert("end", "\n".join(self.command_history[-12:]))
 
         interpretation = self.router.interpret(raw)
         threading.Thread(target=self._process_command, args=(interpretation,), daemon=True).start()
@@ -790,6 +917,9 @@ class TeknofestAssistantApp(ctk.CTk):
 
         # install intent
         if interpretation.should_install_module:
+            if not self.openclaw.use_installer:
+                self.bus.emit("chat", "ASİSTAN", "OpenClaw profilinde paket kurulum devre dışı.")
+                return
             package = self._extract_install_target(interpretation.raw)
             if package:
                 ok, info = self.installer.install_package(package)
@@ -801,14 +931,25 @@ class TeknofestAssistantApp(ctk.CTk):
             self.bus.emit("chat", "ASİSTAN", "Kurulacak paket adı anlaşılamadı.")
 
         # context üret
-        web_context = self.search.query(interpretation.raw)
+        web_context = self.search.query(interpretation.raw) if self.openclaw.use_web else "Web arama profilde kapalı."
         project_context = self._build_project_context()
         language_hint = self.router.detect_language_name(interpretation.raw)
-        ai_response = self.ai.ask(interpretation.raw, web_context, project_context, language_hint)
+        ai_response = self.ai.ask(
+            interpretation.raw,
+            web_context,
+            project_context,
+            language_hint,
+            self.openclaw.mode,
+            self.openclaw.model,
+            self.openclaw.temperature,
+        )
 
         # dosya üretimi
         created_path: Path | None = None
         if interpretation.should_generate_file:
+            if not self.openclaw.use_file_ops:
+                self.bus.emit("chat", "ASİSTAN", "OpenClaw profilinde dosya üretimi devre dışı.")
+                return
             if not self.workspace:
                 self.bus.emit("chat", "ASİSTAN", "Dosya oluşturmak için önce çalışma alanı seçin.")
             else:
