@@ -915,6 +915,11 @@ class TeknofestAssistantApp(ctk.CTk):
             return True
         return False
 
+    @staticmethod
+    def _apply_future_filters(command: str) -> str:
+        """Filtre sistemi özellikle şimdilik kapalı. İleride buraya eklenecek."""
+        return command
+
     def select_workspace(self) -> None:
         selected = filedialog.askdirectory()
         if not selected:
@@ -967,6 +972,7 @@ class TeknofestAssistantApp(ctk.CTk):
         raw = self.command_entry.get().strip()
         if not raw:
             return
+        raw = self._apply_future_filters(raw)
 
         self.command_entry.delete(0, "end")
         self.bus.emit("chat", "KULLANICI", raw)
