@@ -8,14 +8,13 @@ from __future__ import annotations
 
 import ast
 import json
-import os
 import queue
 import re
 import subprocess
 import sys
 import threading
 import time
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -90,6 +89,14 @@ FAST_RESPONSES = {
     "kimsin": "Ben TEKNOFEST Asistan Studio; yarışma odaklı mühendislik asistanıyım.",
 }
 
+INSTANT_COMMANDS = {
+    "hello": "Hi.",
+    "hi": "Hi.",
+    "ping": "pong",
+    "status": "online",
+    "thanks": "You're welcome.",
+}
+
 FILE_CREATION_KEYWORDS = {
     "oluştur",
     "yaz",
@@ -123,10 +130,11 @@ LANGUAGE_RULES = [
 ]
 
 SYSTEM_PROMPT = (
-    "Sen TEKNOFEST Asistan Studio için çalışan kıdemli bir mühendislik yardımcı modelisin. "
-    "Yanıtların Türkçe, açık, uygulanabilir ve güvenli olsun. "
-    "Kod gerektiğinde mutlaka markdown kod blokları kullan. "
-    "Yarışma projeleri için profesyonel ve teknik bir üslup kullan."
+    "You are a senior autonomous software engineer AI. "
+    "If the input is simple greeting/command (hello, hi, ping, status, thanks), answer instantly with no explanation. "
+    "If code is requested, produce production-ready executable code with minimal comments, modular structure, good performance, basic error handling, and scalable async style when relevant. "
+    "If complex, break into modules and include architecture, file structure, and usage. "
+    "Avoid pseudocode and avoid unnecessary verbosity."
 )
 
 
@@ -723,6 +731,10 @@ class TeknofestAssistantApp(ctk.CTk):
 
     def _process_command(self, interpretation: CommandInterpretation) -> None:
         normalized = interpretation.normalized
+
+        if normalized in INSTANT_COMMANDS:
+            self.bus.emit("chat", "ASİSTAN", INSTANT_COMMANDS[normalized])
+            return
 
         # hızlı yanıt
         if normalized in FAST_RESPONSES:
