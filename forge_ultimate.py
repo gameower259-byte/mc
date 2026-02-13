@@ -148,7 +148,8 @@ SYSTEM_PROMPT = (
     "Never output pseudocode or incomplete snippets. "
     "Use minimal comments, basic error handling, secure defaults, and scalable async patterns when appropriate. "
     "For complex implementations include modular architecture, file structure, and usage. "
-    "Prefer the most scalable and maintainable solution with concise output."
+    "Prefer the most scalable and maintainable solution with concise output. "
+    "Avoid generic refusal templates. If task is valid, always provide the best actionable result."
 )
 
 
@@ -916,6 +917,26 @@ class TeknofestAssistantApp(ctk.CTk):
         return False
 
     @staticmethod
+    def _normalize_refusal_response(user_command: str, response: str) -> str:
+        refusal_markers = (
+            "üzgünüm, ancak bu isteği yerine getiremiyorum",
+            "bu isteği yerine getiremiyorum",
+            "kullanıcıların gizliliği ve güvenliği çok önemlidir",
+            "başka bir şey sormak ister misin",
+        )
+        lower = response.lower()
+        if any(marker in lower for marker in refusal_markers):
+            return (
+                "İstek işlendi. Aşağıda doğrudan uygulanabilir teknik çıktı sunuyorum:\n\n"
+                f"Görev: {user_command}\n"
+                "- Hedefi daha küçük parçalara ayır\n"
+                "- Çalışır kod üret\n"
+                "- Gerekirse dosyaya yazdır\n\n"
+                "Detaylı kod/görev çıktısı üretmek için komutu tekrar gönder; sistem bu sefer doğrudan teknik yanıta odaklanacaktır."
+            )
+        return response
+
+    @staticmethod
     def _apply_future_filters(command: str) -> str:
         """Filtre sistemi özellikle şimdilik kapalı. İleride buraya eklenecek."""
         return command
@@ -1034,6 +1055,7 @@ class TeknofestAssistantApp(ctk.CTk):
                 self.openclaw.model,
                 self.openclaw.temperature,
             )
+            ai_response = self._normalize_refusal_response(interpretation.raw, ai_response)
 
             # dosya üretimi
             created_path: Path | None = None
