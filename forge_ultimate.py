@@ -130,11 +130,14 @@ LANGUAGE_RULES = [
 ]
 
 SYSTEM_PROMPT = (
-    "You are a senior autonomous software engineer AI. "
-    "If the input is simple greeting/command (hello, hi, ping, status, thanks), answer instantly with no explanation. "
-    "If code is requested, produce production-ready executable code with minimal comments, modular structure, good performance, basic error handling, and scalable async style when relevant. "
-    "If complex, break into modules and include architecture, file structure, and usage. "
-    "Avoid pseudocode and avoid unnecessary verbosity."
+    "You are a senior autonomous polyglot software engineer AI. "
+    "Auto-detect requested programming language and use idiomatic production-grade code. "
+    "If language is unspecified, choose the most suitable language and output executable code only. "
+    "For simple greeting/commands (hello, hi, ping, status, thanks), answer instantly without explanation. "
+    "Never output pseudocode or incomplete snippets. "
+    "Use minimal comments, basic error handling, secure defaults, and scalable async patterns when appropriate. "
+    "For complex implementations include modular architecture, file structure, and usage. "
+    "Prefer the most scalable and maintainable solution with concise output."
 )
 
 
@@ -329,10 +332,11 @@ class AIEngine:
         self.logger = logger
         self.timeout = timeout
 
-    def ask(self, user_command: str, web_context: str, project_context: str) -> str:
+    def ask(self, user_command: str, web_context: str, project_context: str, language_hint: str) -> str:
         self.logger.log("LLM yanıtı hazırlanıyor.")
         try:
             msg = (
+                f"Detected language: {language_hint}\n\n"
                 f"Proje bağlamı:\n{project_context}\n\n"
                 f"Web bağlamı:\n{web_context}\n\n"
                 f"Kullanıcı komutu:\n{user_command}"
@@ -407,7 +411,10 @@ class FileArchitect:
     def save_generated_content(self, workspace: Path, command: str, model_output: str) -> Path:
         ext = self.infer_extension(command)
         filename = self.extract_filename(command) or f"teknofest_output_{int(time.time())}{ext}"
-        final_path = workspace / filename
+        final_path = (workspace / filename).resolve()
+        workspace_resolved = workspace.resolve()
+        if workspace_resolved not in final_path.parents and final_path != workspace_resolved:
+            raise ValueError("Geçersiz dosya yolu algılandı.")
 
         clean_text = self.cleanup_markdown_code(model_output)
         final_path.write_text(clean_text + "\n", encoding="utf-8")
@@ -454,6 +461,37 @@ class CommandRouter:
             if any(alias in command for alias in rule.aliases):
                 return rule.extension
         return ".txt"
+
+    @staticmethod
+    def detect_language_name(command: str) -> str:
+        lower = command.lower()
+        mapping = {
+            "python": "Python",
+            "py": "Python",
+            "javascript": "JavaScript",
+            "js": "JavaScript",
+            "typescript": "TypeScript",
+            "ts": "TypeScript",
+            "html": "HTML",
+            "css": "CSS",
+            "json": "JSON",
+            "markdown": "Markdown",
+            "md": "Markdown",
+            "go": "Go",
+            "golang": "Go",
+            "rust": "Rust",
+            "java": "Java",
+            "c#": "C#",
+            "c++": "C++",
+            "php": "PHP",
+            "ruby": "Ruby",
+            "kotlin": "Kotlin",
+            "swift": "Swift",
+        }
+        for key, val in mapping.items():
+            if key in lower:
+                return val
+        return "Auto"
 
 
 # --------------------------------------------------------------------------------------
@@ -765,7 +803,8 @@ class TeknofestAssistantApp(ctk.CTk):
         # context üret
         web_context = self.search.query(interpretation.raw)
         project_context = self._build_project_context()
-        ai_response = self.ai.ask(interpretation.raw, web_context, project_context)
+        language_hint = self.router.detect_language_name(interpretation.raw)
+        ai_response = self.ai.ask(interpretation.raw, web_context, project_context, language_hint)
 
         # dosya üretimi
         created_path: Path | None = None
